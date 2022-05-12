@@ -22,8 +22,8 @@ namespace LUZ_TREINAMENTO
     {
         public MainWindow()
         {
-            InitializeComponent();
             DataContext = new MainWindowVM();
+            InitializeComponent();
         }
     }
 }

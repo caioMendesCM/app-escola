@@ -6,6 +6,11 @@
     <RootNamespace>LUZ_TREINAMENTO</RootNamespace>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Npgsql" Version="6.0.4" />
+  </ItemGroup>
 
 </Project>

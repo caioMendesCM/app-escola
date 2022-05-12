@@ -16,9 +16,14 @@ namespace LUZ_TREINAMENTO
             Students = new ObservableCollection<Student>();
         }
 
-        public void AddStudent(string name, int id, Grade grade)
+        public void Clear()
         {
-            this.Students.Add(new Student(name, id, grade));
+            Students.Clear();
+        }
+
+        public void AddStudent(string name, Grade grade)
+        {
+            this.Students.Add(new Student(name, grade));
         }
 
         public void AddStudent(Student student)

@@ -8,29 +8,35 @@ namespace LUZ_TREINAMENTO
 {
     public class Student
     {
-        private string name;
         private int id;
+        private string name;
         private Grade grade;
 
-        public Student(string name, int id, Grade grade)
+        public Student(string name, Grade grade)
         {
             this.name = name;
+            this.grade = grade;
+        }
+
+        public Student(int id, string name, Grade grade)
+        {
             this.id = id;
+            this.name = name;
             this.grade = grade;
         }
 
         public Student() { }
 
-        public string Name
-        {
-            get { return name; }
-            set { name = value; }
-        }
-
         public int Id
         {
             get { return id; }
             set { id = value; }
+        }
+
+        public string Name
+        {
+            get { return name; }
+            set { name = value; }
         }
 
         public Grade Grade
