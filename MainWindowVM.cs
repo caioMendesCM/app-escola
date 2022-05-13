@@ -1,4 +1,5 @@
 ﻿using Npgsql;
+using MySql.Data.MySqlClient;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -19,11 +20,15 @@ namespace LUZ_TREINAMENTO
         public ICommand UpdateStudent { get; private set; }
         public string connstring = String.Format("Server={0};Port={1};" + 
                 "User Id={2};Password={3};Database={4}",
-                "localhost", 5432, "postgres", "123", "Escola");
-        private NpgsqlConnection conn;
-        private NpgsqlCommand cmd;
+                "localhost", 9999, "root", "my-secret-pw", "escola");
+        //private NpgsqlConnection conn;
+        //private NpgsqlCommand cmd;
+        //private string sql;
+        //public NpgsqlDataReader reader;
+        private MySqlConnection conn;
+        private MySqlCommand cmd;
+        private MySqlDataReader reader;
         private string sql;
-        public NpgsqlDataReader reader;
 
         public MainWindowVM()
         {
@@ -31,6 +36,11 @@ namespace LUZ_TREINAMENTO
             StartConnection();
             StartCommands();
             Select();
+        }
+        public void StartConnection()
+        {
+            conn = new MySqlConnection();
+            conn.ConnectionString = connstring;
         }
         public void StartCommands()
         {
@@ -45,18 +55,11 @@ namespace LUZ_TREINAMENTO
                 try
                 {
                     conn.Open();
-                    sql = @"SELECT * FROM st_insert(:_name, :_grade)";
-                    cmd = new NpgsqlCommand(sql, conn);
-                    cmd.Parameters.AddWithValue("_name", student.Name);
-                    cmd.Parameters.AddWithValue("_grade", (int)student.Grade);
-                    if((int)cmd.ExecuteScalar() == 1)
-                    {
-                        MessageBox.Show("Student added with success");
-                    }
-                    else
-                    {
-                        MessageBox.Show("Failed to add Student");
-                    }
+                    sql = "INSERT INTO students (st_name, st_grade) values ('" + student.Name + "', " + (int)student.Grade + ")";
+                    cmd = new MySqlCommand();
+                    cmd.Connection = conn;
+                    cmd.CommandText = sql;
+                    cmd.ExecuteReader();
                     conn.Close();
                     Select();
                 }catch (Exception ex)
@@ -71,18 +74,13 @@ namespace LUZ_TREINAMENTO
                 try
                 {
                     conn.Open();
-                    sql = @"SELECT * FROM st_delete(:_id)";
-                    cmd = new NpgsqlCommand(sql, conn);
-                    cmd.Parameters.AddWithValue("_id", SelectedStudent.Id);
-                    if((int)cmd.ExecuteScalar() == 1)
-                    {
-                        School.RemoveStudent(SelectedStudent);
-                        MessageBox.Show("Student removed with success");
-                    } else
-                    {
-                        MessageBox.Show("Failed to remove Student");
-                    }
+                    sql = "DELETE FROM students WHERE st_id = " + SelectedStudent.Id;
+                    cmd = new MySqlCommand();
+                    cmd.Connection = conn;
+                    cmd.CommandText = sql;
+                    cmd.ExecuteReader();
                     conn.Close();
+                    School.RemoveStudent(SelectedStudent);
                 }
                 catch (Exception ex)
                 {
@@ -102,23 +100,24 @@ namespace LUZ_TREINAMENTO
                 UpdateStudent updateStudentPopUp = new();
                 updateStudentPopUp.DataContext = student;
                 updateStudentPopUp.ShowDialog();
-
-                conn.Open();
-                sql = @"SELECT * FROM st_update(:_id, :_name, :_grade)";
-                cmd = new NpgsqlCommand(sql, conn);
-                cmd.Parameters.AddWithValue("_id", SelectedStudent.Id);
-                cmd.Parameters.AddWithValue("_name", SelectedStudent.Name);
-                cmd.Parameters.AddWithValue("_grade", (int)SelectedStudent.Grade);
-                if ((int)cmd.ExecuteScalar() == 1)
+                try
                 {
+                    conn.Open();
+                    sql = "UPDATE students SET " +
+                        "st_name = '" + student.Name +
+                        "', st_grade = " + (int) student.Grade +
+                        " WHERE st_id = " + SelectedStudent.Id;
+                    cmd = new MySqlCommand();
+                    cmd.Connection = conn;
+                    cmd.CommandText = sql;
+                    cmd.ExecuteReader();
+                    conn.Close();
                     School.UpdateStudent(SelectedStudent, student.Name, student.Grade);
-                    MessageBox.Show("Student updated with success");
-                }
-                else
+
+                }catch (Exception ex)
                 {
-                    MessageBox.Show("Failed to update Student");
+                    MessageBox.Show("ERROR: " + ex.Message);
                 }
-                conn.Close();
             }, (object _) =>
             {
                 if (SelectedStudent != null) return true;
@@ -126,28 +125,26 @@ namespace LUZ_TREINAMENTO
             });
         }
 
-        public void StartConnection()
-        {
-            conn = new NpgsqlConnection(connstring);
-        }
-
         public void Select()
         {
             try
             {
                 conn.Open();
-                sql = @"SELECT * FROM st_select()";
-                cmd = new NpgsqlCommand(sql, conn);
+                sql = "SELECT * FROM students";
+                cmd = new MySqlCommand();
+                cmd.Connection = conn;
+                cmd.CommandText = sql;
                 reader = cmd.ExecuteReader();
                 School.Clear();
                 while(reader.Read())
                 {
-                   int id = int.Parse(reader["_id"].ToString());
-                   string name = reader["_name"].ToString();
-                   Grade grade = (Grade)int.Parse(reader["_grade"].ToString());
+                   int id = int.Parse(reader["st_id"].ToString());
+                   string name = reader["st_name"].ToString();
+                   Grade grade = (Grade)int.Parse(reader["st_grade"].ToString());
                    Student student = new(id, name, grade);
                    School.AddStudent(student);
                 }
+                reader.Close();
                 conn.Close();
                 
             } catch (Exception ex)
