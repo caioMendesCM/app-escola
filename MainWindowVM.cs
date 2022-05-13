@@ -23,12 +23,8 @@ namespace LUZ_TREINAMENTO
                 "localhost", 9999, "root", "my-secret-pw", "escola");
         //private NpgsqlConnection conn;
         //private NpgsqlCommand cmd;
-        //private string sql;
         //public NpgsqlDataReader reader;
-        private MySqlConnection conn;
-        private MySqlCommand cmd;
-        private MySqlDataReader reader;
-        private string sql;
+        private IConexao mysqlcon;
 
         public MainWindowVM()
         {
@@ -39,8 +35,7 @@ namespace LUZ_TREINAMENTO
         }
         public void StartConnection()
         {
-            conn = new MySqlConnection();
-            conn.ConnectionString = connstring;
+            mysqlcon = new MySqlConexao();
         }
         public void StartCommands()
         {
@@ -54,17 +49,11 @@ namespace LUZ_TREINAMENTO
 
                 try
                 {
-                    conn.Open();
-                    sql = "INSERT INTO students (st_name, st_grade) values ('" + student.Name + "', " + (int)student.Grade + ")";
-                    cmd = new MySqlCommand();
-                    cmd.Connection = conn;
-                    cmd.CommandText = sql;
-                    cmd.ExecuteReader();
-                    conn.Close();
-                    Select();
-                }catch (Exception ex)
+                    student.Id = mysqlcon.AdicionarNaTabela(student);
+                    School.AddStudent(student);
+                }
+                catch (Exception ex)
                 {
-                    conn.Close();
                     MessageBox.Show("ERROR: "+ex.Message);
                 }
             });
@@ -73,18 +62,11 @@ namespace LUZ_TREINAMENTO
             {
                 try
                 {
-                    conn.Open();
-                    sql = "DELETE FROM students WHERE st_id = " + SelectedStudent.Id;
-                    cmd = new MySqlCommand();
-                    cmd.Connection = conn;
-                    cmd.CommandText = sql;
-                    cmd.ExecuteReader();
-                    conn.Close();
+                    mysqlcon.RemoverDaTabela(SelectedStudent);
                     School.RemoveStudent(SelectedStudent);
                 }
                 catch (Exception ex)
                 {
-                    conn.Close();
                     MessageBox.Show("ERROR: " + ex.Message);
                 } 
             },(object _) =>
@@ -102,19 +84,10 @@ namespace LUZ_TREINAMENTO
                 updateStudentPopUp.ShowDialog();
                 try
                 {
-                    conn.Open();
-                    sql = "UPDATE students SET " +
-                        "st_name = '" + student.Name +
-                        "', st_grade = " + (int) student.Grade +
-                        " WHERE st_id = " + SelectedStudent.Id;
-                    cmd = new MySqlCommand();
-                    cmd.Connection = conn;
-                    cmd.CommandText = sql;
-                    cmd.ExecuteReader();
-                    conn.Close();
+                    mysqlcon.AtualizarNaTabela(student, SelectedStudent);
                     School.UpdateStudent(SelectedStudent, student.Name, student.Grade);
-
-                }catch (Exception ex)
+                }
+                catch (Exception ex)
                 {
                     MessageBox.Show("ERROR: " + ex.Message);
                 }
@@ -129,27 +102,10 @@ namespace LUZ_TREINAMENTO
         {
             try
             {
-                conn.Open();
-                sql = "SELECT * FROM students";
-                cmd = new MySqlCommand();
-                cmd.Connection = conn;
-                cmd.CommandText = sql;
-                reader = cmd.ExecuteReader();
-                School.Clear();
-                while(reader.Read())
-                {
-                   int id = int.Parse(reader["st_id"].ToString());
-                   string name = reader["st_name"].ToString();
-                   Grade grade = (Grade)int.Parse(reader["st_grade"].ToString());
-                   Student student = new(id, name, grade);
-                   School.AddStudent(student);
-                }
-                reader.Close();
-                conn.Close();
-                
-            } catch (Exception ex)
-            {
-                conn.Close();
+                School.Students = mysqlcon.ReceberTabela();
+            }
+            catch (Exception ex)
+            {   
                 MessageBox.Show("Error :" + ex.Message);
             }
         }
