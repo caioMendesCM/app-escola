@@ -2,76 +2,118 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Data.Common;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace LUZ_TREINAMENTO
 {
     public class MySqlConexao : IConexao
     {
-        private string connstring = String.Format("Server={0};Port={1};" +
-                "User Id={2};Password={3};Database={4}",
-                "localhost", 9999, "root", "my-secret-pw", "escola");
+        private string server;
+        private int port;
+        private string user; 
+        private string password;
+        private string database;
+        private string connstring;
+        private string sql;
         private MySqlCommand cmd;
         private MySqlDataReader reader;
-        private String sql;
         private MySqlConnection conn;
 
         public MySqlConexao()
         {
-            conn = new MySqlConnection();
+            server = "localhost";
+            port = 9999;
+            user = "root";
+            password = "my-secret-pw";
+            database = "escola";
+            StartConnection();
+        }
+
+        public void StartConnection()
+        {
+            connstring = String.Format(
+                "Server={0};Port={1};User Id={2};Password={3};Database={4}",
+                server, port, user, password, database);
+            conn = new();
             conn.ConnectionString = connstring;
             cmd = new();
             cmd.Connection = conn;
         }
-        public int AdicionarNaTabela(Student student)
+        // expect a table name like "students", parameters like "(nameA, nameB)
+        // and what you're trying to add like (Caio Mendes, 2)"
+        public int AdicionarNaTabela(string table, string parameters, string items)
         {
-            sql = "INSERT INTO students (st_name, st_grade) values ('" + student.Name + "', " + (int)student.Grade + ")";
-            conn.Open();
-            cmd.CommandText = sql;
-            cmd.ExecuteReader();
-            conn.Close();
+            sql = String.Format($"INSERT INTO {table} {parameters} values {items}");
+            OpenConnections(true);
             return (int)cmd.LastInsertedId;
         }
-        public void AtualizarNaTabela(Student student, Student selectedStudent)
+        // expect a table name like "students", changes like "st_name = 'Jonathan Sousa'"
+        // and where like "st_id = 1"
+        public void AtualizarNaTabela(string table, string changes, string where)
         {
-            sql = "UPDATE students SET " +
-                  "st_name = '" + student.Name +
-                  "', st_grade = " + (int)student.Grade +
-                  " WHERE st_id = " + selectedStudent.Id;
-            conn.Open();
-            cmd.CommandText = sql;
-            cmd.ExecuteReader();
-            conn.Close();
+            sql = String.Format($"UPDATE {table} SET {changes} WHERE {where}");
+            OpenConnections(true);
         }
-        public void RemoverDaTabela(Student student)
+        // expect a table name like "students" and where like "st_id = 1"
+        public void RemoverDaTabela(string table, string where)
         {
-            sql = "DELETE FROM students WHERE st_id = " + student.Id;
-            conn.Open();
-            cmd.CommandText = sql;
-            cmd.ExecuteReader();
-            conn.Close();
+            sql = String.Format($"DELETE FROM {table} WHERE {where}");
+            OpenConnections(true);
         }
-        public ObservableCollection<Student> ReceberTabela()
+        public DbDataReader ReceberTabela(string table)
         {
-            ObservableCollection<Student> list = new();
-            sql = "SELECT * FROM students";
+            sql = String.Format($"SELECT * FROM {table}");
+            OpenConnections(false);
+            return reader;
+        }
+
+        public void OpenConnections(Boolean selfClose)
+        {
             conn.Open();
             cmd.CommandText = sql;
             reader = cmd.ExecuteReader();
-            while (reader.Read())
+            if (selfClose)
             {
-                int id = reader.GetInt16(0);
-                string name = reader.GetString(1);
-                Grade grade = (Grade)reader.GetInt16(2);
-                Student student = new(id, name, grade);
-                list.Add(student);
+                CloseConnections();
             }
-            reader.Close();
-            conn.Close();
-            return list;
         }
+        public void CloseConnections()
+        {
+            conn.Close();
+            reader.Close();
+        }
+
+        public string Server
+        {
+            get { return server; }
+            set { server = value; }
+        }
+        public int Port 
+        {
+            get { return port; }
+            set { port = value; }
+        }
+        public string User 
+        {
+            get { return user; }
+            set { user = value; }
+        }
+        public string Password 
+        {
+            get { return password; }
+            set { password = value; }
+        }
+        public string Database
+        {
+            get { return database; }
+            set { database = value; }
+        }
+
 
     }
 }

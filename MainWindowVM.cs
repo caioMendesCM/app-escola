@@ -2,11 +2,13 @@
 using MySql.Data.MySqlClient;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Linq;
 using static LUZ_TREINAMENTO.Escola;
 
 namespace LUZ_TREINAMENTO
@@ -49,7 +51,11 @@ namespace LUZ_TREINAMENTO
 
                 try
                 {
-                    student.Id = mysqlcon.AdicionarNaTabela(student);
+                    student.Id = mysqlcon.AdicionarNaTabela(
+                        "students",
+                        "(st_name, st_grade)",
+                        $"('{student.Name}', {(int)student.Grade})"
+                    );
                     School.AddStudent(student);
                 }
                 catch (Exception ex)
@@ -62,7 +68,10 @@ namespace LUZ_TREINAMENTO
             {
                 try
                 {
-                    mysqlcon.RemoverDaTabela(SelectedStudent);
+                    mysqlcon.RemoverDaTabela(
+                        "students",
+                        $"st_id = {SelectedStudent.Id}"
+                    );
                     School.RemoveStudent(SelectedStudent);
                 }
                 catch (Exception ex)
@@ -84,7 +93,11 @@ namespace LUZ_TREINAMENTO
                 updateStudentPopUp.ShowDialog();
                 try
                 {
-                    mysqlcon.AtualizarNaTabela(student, SelectedStudent);
+                    mysqlcon.AtualizarNaTabela(
+                        "students", 
+                        $"st_name = '{student.Name}', st_grade = {(int)student.Grade}", 
+                        $"st_id = {SelectedStudent.Id}"
+                    );
                     School.UpdateStudent(SelectedStudent, student.Name, student.Grade);
                 }
                 catch (Exception ex)
@@ -102,7 +115,16 @@ namespace LUZ_TREINAMENTO
         {
             try
             {
-                School.Students = mysqlcon.ReceberTabela();
+                MySqlDataReader reader = (MySqlDataReader)mysqlcon.ReceberTabela("students");
+                while (reader.Read())
+                {
+                    int id = reader.GetInt16(0);
+                    string name = reader.GetString(1);
+                    Grade grade = (Grade)reader.GetInt16(2);
+                    Student student = new(id, name, grade);
+                    School.AddStudent(student);
+                }
+                mysqlcon.CloseConnections();
             }
             catch (Exception ex)
             {   
