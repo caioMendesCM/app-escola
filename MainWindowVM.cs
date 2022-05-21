@@ -1,43 +1,34 @@
 ﻿using Npgsql;
 using MySql.Data.MySqlClient;
 using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Data;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Input;
-using System.Linq;
-using static LUZ_TREINAMENTO.Escola;
+using System.Collections.ObjectModel;
 
 namespace LUZ_TREINAMENTO
 {
     public class MainWindowVM
     {
-        public School School { get; set; }
         public Student SelectedStudent { get; set; }
+        public ObservableCollection<Student> StudentsList { get; set; }
         public ICommand AddStudent { get; private set; }
         public ICommand RemoveStudent { get; private set; }
         public ICommand UpdateStudent { get; private set; }
-        public string connstring = String.Format("Server={0};Port={1};" + 
-                "User Id={2};Password={3};Database={4}",
-                "localhost", 9999, "root", "my-secret-pw", "escola");
+        private IConexao mysqlcon;
         //private NpgsqlConnection conn;
         //private NpgsqlCommand cmd;
         //public NpgsqlDataReader reader;
-        private IConexao mysqlcon;
 
         public MainWindowVM()
         {
-            School = new School();
+            StudentsList = new ObservableCollection<Student>();
             StartConnection();
             StartCommands();
             Select();
         }
         public void StartConnection()
         {
-            mysqlcon = new MySqlConexao();
+            mysqlcon = new MySqlConexao("localhost", 9999, "root", "my-secret-pw", "escola");
         }
         public void StartCommands()
         {
@@ -51,12 +42,7 @@ namespace LUZ_TREINAMENTO
 
                 try
                 {
-                    student.Id = mysqlcon.AdicionarNaTabela(
-                        "students",
-                        "(st_name, st_grade)",
-                        $"('{student.Name}', {(int)student.Grade})"
-                    );
-                    School.AddStudent(student);
+                    StudentsList.Add(student);
                 }
                 catch (Exception ex)
                 {
@@ -68,11 +54,7 @@ namespace LUZ_TREINAMENTO
             {
                 try
                 {
-                    mysqlcon.RemoverDaTabela(
-                        "students",
-                        $"st_id = {SelectedStudent.Id}"
-                    );
-                    School.RemoveStudent(SelectedStudent);
+                    StudentsList.Remove(SelectedStudent);
                 }
                 catch (Exception ex)
                 {
@@ -93,12 +75,7 @@ namespace LUZ_TREINAMENTO
                 updateStudentPopUp.ShowDialog();
                 try
                 {
-                    mysqlcon.AtualizarNaTabela(
-                        "students", 
-                        $"st_name = '{student.Name}', st_grade = {(int)student.Grade}", 
-                        $"st_id = {SelectedStudent.Id}"
-                    );
-                    School.UpdateStudent(SelectedStudent, student.Name, student.Grade);
+                    SelectedStudent.Update(student.Name, student.Grade);
                 }
                 catch (Exception ex)
                 {
@@ -115,16 +92,17 @@ namespace LUZ_TREINAMENTO
         {
             try
             {
-                MySqlDataReader reader = (MySqlDataReader)mysqlcon.ReceberTabela("students");
+                using MySqlDataReader reader = (MySqlDataReader)mysqlcon.ExecuteQuery(
+                    "SELECT * FROM students");
                 while (reader.Read())
                 {
                     int id = reader.GetInt16(0);
                     string name = reader.GetString(1);
                     Grade grade = (Grade)reader.GetInt16(2);
                     Student student = new(id, name, grade);
-                    School.AddStudent(student);
+                    StudentsList.Add(student);
                 }
-                mysqlcon.CloseConnections();
+                mysqlcon.DisposeConnection();
             }
             catch (Exception ex)
             {   

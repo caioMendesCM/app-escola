@@ -1,48 +1,30 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace LUZ_TREINAMENTO
+﻿namespace LUZ_TREINAMENTO
 {
     public class Student
     {
-        private int id;
-        private string name;
-        private Grade grade;
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public Grade Grade { get; set; }
 
         public Student(string name, Grade grade)
         {
-            this.name = name;
-            this.grade = grade;
+            this.Name = name;
+            this.Grade = grade;
         }
-
         public Student(int id, string name, Grade grade)
         {
-            this.id = id;
-            this.name = name;
-            this.grade = grade;
+            this.Id = id;
+            this.Name = name;
+            this.Grade = grade;
         }
-
-        public Student() { }
-
-        public int Id
+        public Student()
         {
-            get { return id; }
-            set { id = value; }
+
         }
-
-        public string Name
+        public void Update(string? name = null, Grade? grade = null)
         {
-            get { return name; }
-            set { name = value; }
-        }
-
-        public Grade Grade
-        {
-            get { return grade; }
-            set { grade = value; }
+            this.Name = name ?? this.Name;
+            this.Grade = grade ?? this.Grade;
         }
     }
 
