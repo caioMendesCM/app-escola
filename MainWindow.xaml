@@ -10,7 +10,7 @@
         <Button Content="Adicionar novo aluno" Command="{Binding AddStudent}" HorizontalAlignment="Left" Margin="134,141,0,0" VerticalAlignment="Top" Width="150"/>
         <Button Content="Remover aluno selecionado" Command="{Binding RemoveStudent}" HorizontalAlignment="Left" Margin="134,207,0,0" VerticalAlignment="Top" Grid.RowSpan="2"/>
         <Button Content="Atualizar aluno selecionado" Command="{Binding UpdateStudent}" HorizontalAlignment="Left" Margin="134,55,0,0" VerticalAlignment="Top" Grid.Row="1"/>
-        <ListView ItemsSource="{Binding School.Students}" SelectedItem="{Binding SelectedStudent}" Margin="400,0,0,0" Grid.RowSpan="2">
+        <ListView ItemsSource="{Binding StudentsList}" SelectedItem="{Binding SelectedStudent}" Margin="400,0,0,0" Grid.RowSpan="2">
             <ListView.View>
                 <GridView>
                     <GridViewColumn DisplayMemberBinding="{Binding Id}"/>
